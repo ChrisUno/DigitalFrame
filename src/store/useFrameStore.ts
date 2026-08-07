@@ -30,6 +30,9 @@ const isSupported = (fileName: string, mimeType: string): boolean => {
 let idCounter = 0;
 const nextId = () => `photo-${Date.now()}-${idCounter++}`;
 
+const byName = (a: Photo, b: Photo) =>
+  a.name.localeCompare(b.name, undefined, { numeric: true });
+
 export const useFrameStore = create<FrameState>((set, get) => ({
   photos: [],
   skippedFiles: [],
@@ -48,10 +51,8 @@ export const useFrameStore = create<FrameState>((set, get) => ({
       }
     }
 
-    valid.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-
     set((state) => ({
-      photos: [...state.photos, ...valid],
+      photos: [...state.photos, ...valid].sort(byName),
       skippedFiles: skipped,
     }));
 

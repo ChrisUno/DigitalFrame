@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
 import { useFrameStore } from '../store/useFrameStore';
@@ -25,6 +26,7 @@ const fitClass: Record<ImageFit, string> = {
 };
 
 const LONG_PRESS_MS = 650;
+const PRESS_MOVE_TOLERANCE_PX = 12;
 
 const Slideshow = () => {
   const photos = useFrameStore((state) => state.photos);
@@ -42,34 +44,45 @@ const Slideshow = () => {
   }, [photos.length, order]);
 
   const advance = useCallback(() => {
-    setPosition((current) => {
-      const next = current + 1;
-      if (next >= playOrder.length) {
-        if (order === 'shuffle') {
-          setPlayOrder(buildOrder(photos.length, true));
-        }
-        return 0;
+    if (playOrder.length === 0) return;
+    const next = position + 1;
+    if (next >= playOrder.length) {
+      if (order === 'shuffle') {
+        setPlayOrder(buildOrder(photos.length, true));
       }
-      return next;
-    });
-  }, [playOrder.length, order, photos.length]);
+      setPosition(0);
+      return;
+    }
+    setPosition(next);
+  }, [position, playOrder.length, order, photos.length]);
 
   useEffect(() => {
     if (settingsOpen || photos.length <= 1) return;
     const timer = window.setInterval(advance, intervalSeconds * 1000);
     return () => window.clearInterval(timer);
-  }, [advance, intervalSeconds, settingsOpen, photos.length, position]);
+  }, [advance, intervalSeconds, settingsOpen, photos.length]);
 
   const pressTimer = useRef<number | null>(null);
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null);
   const clearPress = () => {
     if (pressTimer.current !== null) {
       window.clearTimeout(pressTimer.current);
       pressTimer.current = null;
     }
+    pressOrigin.current = null;
   };
-  const startPress = () => {
+  const startPress = (event: ReactPointerEvent<HTMLDivElement>) => {
     clearPress();
+    pressOrigin.current = { x: event.clientX, y: event.clientY };
     pressTimer.current = window.setTimeout(() => setSettingsOpen(true), LONG_PRESS_MS);
+  };
+  const handlePressMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const origin = pressOrigin.current;
+    if (!origin || pressTimer.current === null) return;
+    const movedTooFar =
+      Math.abs(event.clientX - origin.x) > PRESS_MOVE_TOLERANCE_PX ||
+      Math.abs(event.clientY - origin.y) > PRESS_MOVE_TOLERANCE_PX;
+    if (movedTooFar) clearPress();
   };
 
   useEffect(() => () => clearPress(), []);
@@ -79,12 +92,12 @@ const Slideshow = () => {
 
   return (
     <div
-      className="relative h-screen w-screen touch-none select-none overflow-hidden bg-black"
+      className="relative h-dvh w-screen touch-none select-none overflow-hidden bg-black"
       onPointerDown={startPress}
       onPointerUp={clearPress}
       onPointerLeave={clearPress}
       onPointerCancel={clearPress}
-      onPointerMove={clearPress}
+      onPointerMove={handlePressMove}
     >
       <AnimatePresence>
         {currentPhoto && (

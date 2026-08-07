@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { ChangeEvent } from 'react';
 import { FolderOpen, ImagePlus, Play, Trash2, Images } from 'lucide-react';
 import { useFrameStore } from '../store/useFrameStore';
 import SettingsFields from './SettingsFields';
@@ -20,13 +21,16 @@ const SetupScreen = () => {
     }
   }, []);
 
-  const handleFiles = (fileList: FileList | null) => {
-    if (!fileList || fileList.length === 0) return;
-    loadFiles(Array.from(fileList));
+  const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
+    const fileList = event.target.files;
+    if (fileList && fileList.length > 0) {
+      loadFiles(Array.from(fileList));
+    }
+    event.target.value = '';
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+    <div className="min-h-dvh bg-neutral-950 text-white">
       <div className="mx-auto flex max-w-3xl flex-col gap-10 px-6 py-12 sm:px-8 lg:px-12">
         <header className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
@@ -66,7 +70,7 @@ const SetupScreen = () => {
             type="file"
             multiple
             className="hidden"
-            onChange={(event) => handleFiles(event.target.files)}
+            onChange={handleFiles}
           />
           <input
             ref={filesInputRef}
@@ -74,7 +78,7 @@ const SetupScreen = () => {
             accept="image/*"
             multiple
             className="hidden"
-            onChange={(event) => handleFiles(event.target.files)}
+            onChange={handleFiles}
           />
 
           {photos.length > 0 ? (

@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 import { useFrameStore } from '../store/useFrameStore';
+import type { ClockPosition } from '../types';
 
-const positionClasses: Record<string, string> = {
+const positionClasses: Record<ClockPosition, string> = {
   'bottom-left': 'bottom-0 left-0 p-8 items-start text-left',
   'top-right': 'top-0 right-0 p-8 items-end text-right',
   'bottom-center':
